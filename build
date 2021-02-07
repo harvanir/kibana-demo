@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd app/java/spring-boot-web||exit
+./build
+cd ../../../

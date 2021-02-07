@@ -1,0 +1,4 @@
+#!/bin/sh
+
+mkdir esdata
+sudo chown -R root:root metricbeat/modules.d

@@ -1,0 +1,16 @@
+#!/bin/sh
+
+cd app/java/spring-boot-web||exit
+./cleanup
+cd ../../../
+
+sudo rm -r esdata
+docker container rm kibana-demo_elasticsearch
+docker container rm kibana-demo_kibana
+docker container rm kibana-demo_apm-server
+docker container rm kibana-demo_metricbeat
+docker container rm kibana-demo_spring-boot-web
+docker volume rm elastic-apm_esdata
+
+./init
+#sudo chown -R $(whoami):$(whoami) metricbeat/modules.d
