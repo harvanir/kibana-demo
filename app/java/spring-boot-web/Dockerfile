@@ -2,7 +2,7 @@ FROM azul/zulu-openjdk-alpine:11.0.8-11.41.23-jre-headless as builder
 WORKDIR application
 ARG JAR_FILE=app/java/spring-boot-web/target/*.jar
 COPY ${JAR_FILE} app.jar
-COPY apm/elastic-apm-agent-1.20.0.jar dependencies/elastic-apm-agent-1.20.0.jar
+COPY apm/elastic-apm-agent-1.23.0.jar dependencies/elastic-apm-agent.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
 FROM azul/zulu-openjdk-alpine:11.0.8-11.41.23-jre-headless

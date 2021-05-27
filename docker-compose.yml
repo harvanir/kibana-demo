@@ -1,5 +1,9 @@
 version: '2.2'
 
+networks:
+  elk:
+    driver: bridge
+
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
@@ -18,7 +22,9 @@ services:
       - ./esdata:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
-    network_mode: host
+    networks:
+      - elk
+    #    network_mode: host
     restart: on-failure
     healthcheck:
       interval: 20s
@@ -33,11 +39,13 @@ services:
         condition: service_healthy
     restart: on-failure
     environment:
-      ELASTICSEARCH_URL: http://localhost:9200
-      ELASTICSEARCH_HOSTS: http://localhost:9200
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:
       - 5601:5601
-    network_mode: host
+    networks:
+      - elk
+    #    network_mode: host
     healthcheck:
       interval: 10s
       retries: 20
@@ -55,15 +63,17 @@ services:
     cap_drop: [ "ALL" ]
     ports:
       - 8200:8200
-    network_mode: host
+    networks:
+      - elk
+    #    network_mode: host
     command: >
       apm-server -e
         -E apm-server.rum.enabled=true
-        -E setup.kibana.host=localhost:5601
+        -E setup.kibana.host=kibana:5601
         -E setup.template.settings.index.number_of_replicas=0
         -E apm-server.kibana.enabled=true
-        -E apm-server.kibana.host=localhost:5601
-        -E output.elasticsearch.hosts=["localhost:9200"]
+        -E apm-server.kibana.host=kibana:5601
+        -E output.elasticsearch.hosts=["elasticsearch:9200"]
     healthcheck:
       interval: 10s
       retries: 12
@@ -73,7 +83,9 @@ services:
     image: docker.elastic.co/beats/metricbeat:7.10.2
     container_name: kibana-demo_metricbeat
     user: root
-    network_mode: host
+    networks:
+      - elk
+    #    network_mode: host
     logging:
       options:
         max-file: "3"
@@ -84,7 +96,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /:/hostfs:ro
       - ./metricbeat/modules.d/:/usr/share/metricbeat/modules.d/
-    command: metricbeat -E output.elasticsearch.hosts=["localhost:9200"]
+    command: metricbeat -E output.elasticsearch.hosts=["elasticsearch:9200"]
     restart: on-failure
     depends_on:
       elasticsearch: { condition: service_healthy }
@@ -97,7 +109,9 @@ services:
     container_name: kibana-demo_spring-boot-web
     ports:
       - 8080:8080
-    network_mode: host
+    networks:
+      - elk
+    #    network_mode: host
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -129,7 +143,9 @@ services:
         -XX:+ExitOnOutOfMemoryError
         -Xms80m -Xmx80m
         -Xlog:gc:GC.log -XX:+UseStringDeduplication
-        -javaagent:elastic-apm-agent-1.20.0.jar
+        -javaagent:elastic-apm-agent.jar
         -Delastic.apm.service_name=spring-boot-web
         -Delastic.apm.service_node_name=spring-boot-web
-        -Delastic.apm.server_urls=http://localhost:8200
+        -Delastic.apm.server_urls=http://apm-server:8200
+        -Delastic.apm.environment=prod
+        -Delastic.apm.service.environment=prod
